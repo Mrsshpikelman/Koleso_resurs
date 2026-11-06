@@ -1,0 +1,352 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Куда уходит мой ресурс</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap">
+<style>
+/* Layout: тёмная шапка с названием программы, ниже две колонки: поля и ползунки слева, колесо справа (на телефоне колесо закреплено сверху). */
+:root{
+  --bg:#FBF8F2; --fg:#1B2433; --muted:#566074; --card:#F3EEE1; --field:#FFFFFF;
+  --line:#D8D0BD; --track:#E2DAC7; --accent:#F2B84B; --on-accent:#1B2433;
+  --band:#1B2433; --band-fg:#F6F1E7; --band-muted:#C4C9D6; --focus:#2F6F6B; --teal:#2F6F6B;
+  --s0:#2F6F6B; --s1:#C98A1B; --s2:#4F6D9A; --s3:#8A5A83; --s4:#B5654A; --s5:#7C8B3F; --s6:#4F8296; --s7:#B0577A;
+  --display:'Playfair Display',Georgia,'Times New Roman',serif;
+  --sans:'Manrope',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141A26; --fg:#F1ECE0; --muted:#A9B1C2; --card:#1D2535; --field:#222B3D;
+    --line:#2F394D; --track:#333E54; --accent:#F2B84B; --on-accent:#1B2433;
+    --band:#0E131C; --band-fg:#F6F1E7; --band-muted:#B5BBCA; --focus:#F2B84B; --teal:#6CC0B8;
+    --s0:#5FB3AC; --s1:#F2B84B; --s2:#8FB0E0; --s3:#C79BC0; --s4:#E39A7F; --s5:#B8C76A; --s6:#8CB8C9; --s7:#E58FB2;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141A26; --fg:#F1ECE0; --muted:#A9B1C2; --card:#1D2535; --field:#222B3D;
+  --line:#2F394D; --track:#333E54; --accent:#F2B84B; --on-accent:#1B2433;
+  --band:#0E131C; --band-fg:#F6F1E7; --band-muted:#B5BBCA; --focus:#F2B84B; --teal:#6CC0B8;
+  --s0:#5FB3AC; --s1:#F2B84B; --s2:#8FB0E0; --s3:#C79BC0; --s4:#E39A7F; --s5:#B8C76A; --s6:#8CB8C9; --s7:#E58FB2;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+h1,h2,h3,p{margin:0}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+
+.band{background:var(--band);color:var(--band-fg)}
+.inner{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.band .inner{padding-block:36px 32px;display:flex;flex-direction:column;gap:14px}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,7vw,56px);line-height:1.05;text-wrap:balance}
+.lede{max-width:56ch;color:var(--band-muted);font-size:17px}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+.chip{background:var(--accent);color:var(--on-accent);font-weight:700;font-size:14px;padding:8px 16px;border-radius:999px}
+.chip.ghost{background:transparent;color:var(--band-fg);border:1.5px solid var(--band-muted)}
+
+.main{padding-block:32px 56px;display:grid;gap:28px 48px;grid-template-columns:minmax(0,1fr);grid-template-areas:"fields" "wheel" "sliders" "result"}
+.fields{grid-area:fields;display:flex;flex-direction:column;gap:18px}
+.wheel{grid-area:wheel;position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:6px 8px;border-bottom:1px solid var(--line);align-self:start}
+.sliders{grid-area:sliders;display:flex;flex-direction:column;gap:6px;min-width:0}
+.result{grid-area:result;min-width:0}
+@media (min-width:1100px){
+  .main{grid-template-columns:minmax(0,1fr) 580px;grid-template-areas:"fields wheel" "sliders wheel" "result wheel"}
+  .wheel{top:max(16px,env(safe-area-inset-top,0px));background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 18px 14px}
+}
+
+label,.lbl{font-weight:600;font-size:15px}
+.field{display:flex;flex-direction:column;gap:8px}
+input[type=text],textarea{width:100%;font:inherit;color:var(--fg);background:var(--field);border:1.5px solid var(--line);border-radius:12px;padding:13px 14px;min-height:48px}
+textarea{resize:vertical;min-height:84px}
+input[type=text]:focus,textarea:focus{border-color:var(--focus)}
+::placeholder{color:var(--muted);opacity:.85}
+
+.q h2{font-family:var(--display);font-weight:600;font-size:clamp(26px,4.6vw,34px);line-height:1.15;text-wrap:balance}
+.q .sub{font-family:var(--sans);font-weight:500;font-size:.55em;color:var(--muted);white-space:nowrap}
+.q p{color:var(--muted);margin-top:10px;max-width:60ch}
+.scale{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--muted);margin-top:14px;padding-bottom:4px}
+.scale b{color:var(--fg);font-weight:700}
+
+.row{padding-block:10px 6px;border-bottom:1px solid var(--line)}
+.row-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.row label{display:flex;align-items:center;gap:10px}
+.dot{width:14px;height:14px;border-radius:50%;background:var(--c);flex:none}
+output{font-variant-numeric:tabular-nums;font-weight:700;font-size:22px;min-width:2.2ch;text-align:right;color:var(--fg)}
+output.unset{color:var(--muted);font-weight:500}
+.sl{position:relative;height:44px;--p:0}
+.sl .track,.sl .fill{position:absolute;top:18px;height:8px;border-radius:4px;left:0}
+.sl .track{right:0;background:var(--track)}
+.sl .fill{background:var(--c);width:calc(12px + (100% - 24px) * var(--p));transition:width .12s ease-out}
+.sl.unset .fill{width:0}
+.sl input{position:absolute;inset:0;width:100%;height:44px;margin:0;background:transparent;-webkit-appearance:none;appearance:none;cursor:pointer;touch-action:pan-y}
+.sl input::-webkit-slider-runnable-track{height:44px;background:transparent}
+.sl input::-moz-range-track{height:44px;background:transparent}
+.sl input::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;margin-top:10px;border:0;border-radius:0;background:var(--c);clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)}
+.sl input::-moz-range-thumb{width:24px;height:24px;border:0;border-radius:0;background:var(--c);clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)}
+.sl.unset input::-webkit-slider-thumb{background:var(--muted);opacity:.6}
+.sl.unset input::-moz-range-thumb{background:var(--muted);opacity:.6}
+.sl input:focus-visible{outline:none}
+.sl:focus-within .track{box-shadow:0 0 0 3px var(--focus)}
+
+svg.w{display:block;width:100%;height:auto;max-height:min(40vh,380px);margin:0 auto}
+@media (min-width:1100px){svg.w{max-height:none}}
+.w text{font-family:var(--sans)}
+.w .nm{font-size:16px;font-weight:600;fill:var(--fg)}
+.w .nm.off{opacity:.55}
+.w .nm .v{font-weight:800}
+.w .tick{font-size:11px;fill:var(--muted)}
+.progress{font-size:13px;color:var(--muted);text-align:center;margin-top:4px}
+
+.result .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px 22px 24px;display:flex;flex-direction:column;gap:14px}
+.result h3{font-family:var(--display);font-weight:600;font-size:24px;line-height:1.2}
+.result .facts{display:flex;flex-direction:column;gap:6px}
+.result .facts p b{font-weight:700}
+.result .note{color:var(--muted);font-size:14px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button{font:inherit;font-weight:700;border-radius:999px;border:0;cursor:pointer;min-height:48px;padding:12px 24px}
+.primary{background:var(--accent);color:var(--on-accent)}
+.primary:disabled{opacity:.45;cursor:not-allowed}
+.link{background:transparent;color:var(--muted);text-decoration:underline;text-underline-offset:3px;font-weight:600;padding-inline:12px}
+.status{font-size:14px;color:var(--teal);font-weight:600}
+#fallback{width:100%;min-height:200px;font-size:14px}
+@media (prefers-reduced-motion:reduce){.sl .fill{transition:none}}
+</style>
+
+<header class="band">
+  <div class="inner">
+    <div class="eyebrow">Коучинговая программа · 6 недель</div>
+    <h1>Закончить год без суеты</h1>
+    <p class="lede">Самодиагностика перед первой встречей. Один шаг: посмотреть, куда сейчас уходит твой ресурс.</p>
+    <div class="chips">
+      <span class="chip">Старт 11 ноября</span>
+      <span class="chip ghost">Анна Шпикельман · коуч-психолог для женщин</span>
+    </div>
+  </div>
+</header>
+
+<main class="inner main">
+  <section class="fields" aria-label="О тебе">
+    <div class="field">
+      <label for="name">Имя</label>
+      <input id="name" type="text" autocomplete="given-name" placeholder="Имя">
+    </div>
+    <div class="field">
+      <label for="request">С каким запросом ты идёшь в программу?</label>
+      <textarea id="request" rows="2" placeholder="Своими словами, одним-двумя предложениями"></textarea>
+    </div>
+    <div class="q">
+      <h2>Куда сейчас уходит мой ресурс? <span class="sub">время, силы, энергия</span></h2>
+      <p>По каждой сфере отметь, сколько времени, сил и энергии она забирает у тебя сейчас. Это не оценка того, насколько ты довольна. Так мы видим, куда ресурс уходит на самом деле.</p>
+      <div class="scale" aria-hidden="true"><span><b>1</b> почти ничего</span><span><b>10</b> очень много</span></div>
+    </div>
+  </section>
+
+  <section class="wheel" aria-label="Колесо ресурса">
+    <svg class="w" id="wheel" viewBox="0 56 540 420" role="img" aria-label="Колесо ресурса"></svg>
+    <div class="progress" id="progress" aria-live="polite"></div>
+  </section>
+
+  <section class="sliders" id="rows" aria-label="Сферы жизни"></section>
+
+  <section class="result" id="result">
+    <div class="card">
+      <h3>Твой результат</h3>
+      <div id="pending" class="note">Отметь все 8 сфер, и здесь появится итог.</div>
+      <div id="done" hidden>
+        <div class="facts" id="facts"></div>
+      </div>
+      <p class="note">Ответы остаются в твоём браузере. Чтобы поделиться ими, скопируй результат и отправь Анне до первой встречи. Можно и просто сделать скриншот колеса.</p>
+      <div class="actions">
+        <button class="primary" id="copy" type="button" disabled>Скопировать результат</button>
+        <button class="link" id="reset" type="button">Начать заново</button>
+        <span class="status" id="status" role="status"></span>
+      </div>
+      <textarea id="fallback" readonly hidden aria-label="Текст результата"></textarea>
+    </div>
+  </section>
+</main>
+
+<script>
+(function(){
+  var SPHERES=[
+    {full:'Тело',lines:['Тело']},
+    {full:'Дело',lines:['Дело']},
+    {full:'Дом / быт',lines:['Дом / быт']},
+    {full:'Финансы',lines:['Финансы']},
+    {full:'Отношения / семья',lines:['Отношения','семья']},
+    {full:'Состояние / энергия',lines:['Состояние','энергия']},
+    {full:'Окружение',lines:['Окружение']},
+    {full:'Развитие',lines:['Развитие']}
+  ];
+  var N=SPHERES.length, KEY='resource-wheel-v1';
+  var CX=270, CY=258, R=160, R0=14, LR=176, LH=19;
+  var vals=[]; for(var i=0;i<N;i++) vals.push(null);
+
+  var $=function(id){return document.getElementById(id)};
+  var nameEl=$('name'), reqEl=$('request');
+
+  function save(){
+    try{ localStorage.setItem(KEY, JSON.stringify({v:vals,n:nameEl.value,r:reqEl.value})); }catch(e){}
+  }
+  function load(){
+    try{
+      var d=JSON.parse(localStorage.getItem(KEY)||'null');
+      if(d){
+        if(Array.isArray(d.v)&&d.v.length===N) vals=d.v.map(function(x){return (typeof x==='number'&&x>=1&&x<=10)?x:null});
+        nameEl.value=d.n||''; reqEl.value=d.r||'';
+      }
+    }catch(e){}
+  }
+
+  /* строки с ползунками */
+  var rowsEl=$('rows');
+  SPHERES.forEach(function(s,i){
+    var row=document.createElement('div');
+    row.className='row';
+    row.style.setProperty('--c','var(--s'+i+')');
+    row.innerHTML=
+      '<div class="row-top"><label for="r'+i+'"><i class="dot"></i>'+s.full+'</label><output id="o'+i+'" for="r'+i+'" class="unset">—</output></div>'+
+      '<div class="sl unset" id="sl'+i+'"><div class="track"></div><div class="fill"></div>'+
+      '<input id="r'+i+'" type="range" min="1" max="10" step="1" value="5" aria-valuetext="не выбрано"></div>';
+    rowsEl.appendChild(row);
+    var inp=row.querySelector('input');
+    var commit=function(){ vals[i]=parseInt(inp.value,10); update(); save(); };
+    inp.addEventListener('input',commit);
+    inp.addEventListener('change',commit);
+    inp.addEventListener('click',commit);
+  });
+
+  /* колесо */
+  function pt(r,deg){var a=deg*Math.PI/180;return [CX+r*Math.sin(a), CY-r*Math.cos(a)];}
+  function f(n){return n.toFixed(2);}
+  function wedge(i,v){
+    var a0=i*45-21, a1=i*45+21, r=R0+(R-R0)*v/10;
+    var p0=pt(r,a0), p1=pt(r,a1), p2=pt(R0,a1), p3=pt(R0,a0);
+    return 'M'+f(p0[0])+' '+f(p0[1])+'A'+f(r)+' '+f(r)+' 0 0 1 '+f(p1[0])+' '+f(p1[1])+
+           'L'+f(p2[0])+' '+f(p2[1])+'A'+R0+' '+R0+' 0 0 0 '+f(p3[0])+' '+f(p3[1])+'Z';
+  }
+  function drawWheel(){
+    var g='';
+    for(var k=2;k<=10;k+=2){
+      var rr=R0+(R-R0)*k/10;
+      g+='<circle cx="'+CX+'" cy="'+CY+'" r="'+f(rr)+'" fill="none" stroke="var(--line)" stroke-width="'+(k===10?1.5:1)+'"/>';
+    }
+    for(var i=0;i<N;i++){
+      var e0=pt(R0,i*45+22.5), e1=pt(R,i*45+22.5);
+      g+='<line x1="'+f(e0[0])+'" y1="'+f(e0[1])+'" x2="'+f(e1[0])+'" y2="'+f(e1[1])+'" stroke="var(--line)" stroke-width="1"/>';
+    }
+    [5,10].forEach(function(k){
+      var rr=R0+(R-R0)*k/10, t=pt(rr,22.5);
+      g+='<text class="tick" x="'+f(t[0]+3)+'" y="'+f(t[1]-2)+'">'+k+'</text>';
+    });
+    for(var j=0;j<N;j++){
+      var v=vals[j];
+      if(v===null){
+        g+='<path d="'+wedge(j,10)+'" fill="none" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="4 4"/>';
+      }else{
+        g+='<path d="'+wedge(j,v)+'" fill="var(--s'+j+')" fill-opacity=".9" stroke="var(--card)" stroke-width="1.5"/>';
+      }
+    }
+    for(var m=0;m<N;m++){
+      var deg=m*45, lp=pt(LR,deg), s=Math.sin(deg*Math.PI/180), c=Math.cos(deg*Math.PI/180);
+      var lines=SPHERES[m].lines, n=lines.length;
+      var anchor = s>0.3?'start':(s<-0.3?'end':'middle');
+      var first;
+      if(c>0.5) first=lp[1]-4-(n-1)*LH;
+      else if(c<-0.5) first=lp[1]+13;
+      else first=lp[1]+5-(n-1)*LH/2;
+      var t='<text class="nm'+(vals[m]===null?' off':'')+'" text-anchor="'+anchor+'" x="'+f(lp[0])+'">';
+      for(var l=0;l<n;l++){
+        var extra=(l===n-1&&vals[m]!==null)?' <tspan class="v">· '+vals[m]+'</tspan>':'';
+        t+='<tspan x="'+f(lp[0])+'" y="'+f(first+l*LH)+'">'+lines[l]+extra+'</tspan>';
+      }
+      g+=t+'</text>';
+    }
+    $('wheel').innerHTML=g;
+  }
+
+  /* итог */
+  function extremes(){
+    var max=-1,min=11;
+    vals.forEach(function(v){ if(v>max)max=v; if(v<min)min=v; });
+    var hi=[],lo=[];
+    vals.forEach(function(v,i){ if(v===max)hi.push(SPHERES[i].full); if(v===min)lo.push(SPHERES[i].full); });
+    return {max:max,min:min,hi:hi,lo:lo};
+  }
+  function buildText(){
+    var nm=nameEl.value.trim(), rq=reqEl.value.trim();
+    var t='Закончить год без суеты. Самодиагностика перед первой встречей\n';
+    t+='Имя: '+(nm||'не указано')+'\n';
+    t+='Запрос: '+(rq||'не указан')+'\n\n';
+    t+='Куда сейчас уходит мой ресурс (время, силы, энергия), от 1 до 10:\n';
+    SPHERES.forEach(function(s,i){ t+=s.full+': '+vals[i]+'\n'; });
+    return t;
+  }
+
+  function update(){
+    var filled=0;
+    for(var i=0;i<N;i++){
+      var v=vals[i], sl=$('sl'+i), out=$('o'+i), inp=$('r'+i);
+      if(v===null){
+        sl.classList.add('unset'); out.classList.add('unset'); out.textContent='—';
+        inp.setAttribute('aria-valuetext','не выбрано');
+      }else{
+        filled++;
+        sl.classList.remove('unset'); out.classList.remove('unset'); out.textContent=v;
+        inp.value=v; sl.style.setProperty('--p',((v-1)/9).toFixed(4));
+        inp.setAttribute('aria-valuetext',v+' из 10');
+      }
+    }
+    drawWheel();
+    $('progress').textContent='Заполнено '+filled+' из '+N;
+    $('wheel').setAttribute('aria-label','Колесо ресурса: заполнено '+filled+' из '+N+' сфер');
+    var done=filled===N;
+    $('done').hidden=!done; $('pending').hidden=done; $('copy').disabled=!done;
+    if(done){
+      var x=extremes();
+      var hi=x.hi.join(', '), lo=x.lo.join(', ');
+      $('facts').innerHTML='<p>Больше всего ресурса уходит в: <b></b> (<span></span> из 10).</p><p>Меньше всего: <b></b> (<span></span> из 10).</p>';
+      var bs=$('facts').querySelectorAll('b'), ss=$('facts').querySelectorAll('span');
+      bs[0].textContent=hi; ss[0].textContent=x.max; bs[1].textContent=lo; ss[1].textContent=x.min;
+    }
+  }
+
+  /* копирование */
+  $('copy').addEventListener('click',function(){
+    var text=buildText(), st=$('status'), fb=$('fallback');
+    function manual(){
+      fb.value=text; fb.hidden=false; fb.focus(); fb.select();
+      st.textContent='Выдели текст ниже и скопируй его вручную.';
+    }
+    try{
+      navigator.clipboard.writeText(text).then(function(){
+        fb.hidden=true; st.textContent='Скопировано. Отправь Анне.';
+      },manual);
+    }catch(e){ manual(); }
+  });
+
+  /* сброс в два касания */
+  var resetTimer=null;
+  $('reset').addEventListener('click',function(){
+    var b=$('reset');
+    if(!resetTimer){
+      b.textContent='Точно очистить всё?';
+      resetTimer=setTimeout(function(){ b.textContent='Начать заново'; resetTimer=null; },4000);
+      return;
+    }
+    clearTimeout(resetTimer); resetTimer=null; b.textContent='Начать заново';
+    vals=vals.map(function(){return null});
+    nameEl.value=''; reqEl.value='';
+    $('status').textContent=''; $('fallback').hidden=true;
+    update(); save();
+  });
+
+  nameEl.addEventListener('input',save);
+  reqEl.addEventListener('input',save);
+
+  load(); update();
+})();
+</script>
+
+</body></html>
